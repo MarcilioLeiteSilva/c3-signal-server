@@ -105,6 +105,7 @@ wss.on('connection', (ws, req) => {
   ws.instance = null;
   ws.room = null;
   ws.isLoggedIn = false;
+  ws.lastPing = Date.now();
 
   try {
     console.log(`[Signal] NEW CONNECTION: ${clientId} from ${ip}`);
@@ -138,8 +139,13 @@ wss.on('connection', (ws, req) => {
 
     const type = msg.message;
 
+    // --- PING ---
+    if (type === 'ping') {
+      ws.lastPing = Date.now();
+      send(ws, { message: 'pong', serverTime: Date.now() });
+
     // --- LOGIN ---
-    if (type === 'login') {
+    } else if (type === 'login') {
       ws.alias = msg.alias || ('Player_' + clientId.substr(0, 4));
       ws.isLoggedIn = true;
       send(ws, { message: 'login-ok', myalias: ws.alias });
@@ -165,7 +171,11 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
-            peeralias: ws.alias || clientId
+            id: clientId,
+            peeralias: ws.alias || clientId,
+            room: room,
+            instance: instance,
+            game: game
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} joined room "${room}"`);
         }
@@ -230,7 +240,10 @@ wss.on('connection', (ws, req) => {
             message: 'peer-joined',
             peerid: clientId,
             id: clientId, // Compatibility alias
-            peeralias: ws.alias || clientId
+            peeralias: ws.alias || clientId,
+            room: targetRoomName,
+            instance: instance,
+            game: game
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} auto-joined "${targetRoomName}"`);
         }
