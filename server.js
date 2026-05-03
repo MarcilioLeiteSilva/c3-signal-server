@@ -77,13 +77,15 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // --- HTTP SERVER FOR HEALTH CHECK & PROXIES ---
 const server = http.createServer((req, res) => {
-  if (req.url === '/health') {
+  console.log(`[Signal] HTTP Request: ${req.method} ${req.url} [Host: ${req.headers.host}]`);
+  
+  if (req.url.startsWith('/health')) {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('OK');
     return;
   }
   res.writeHead(404);
-  res.end();
+  res.end('Not Found');
 });
 
 const wss = new WebSocket.Server({ 
