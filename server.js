@@ -178,7 +178,9 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
-            peeralias: ws.alias || clientId
+            peeralias: ws.alias || clientId,
+            'peer-id': clientId,
+            'peer-alias': ws.alias || clientId
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} joined room "${room}"`);
         }
@@ -242,7 +244,9 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
-            peeralias: ws.alias || clientId
+            peeralias: ws.alias || clientId,
+            'peer-id': clientId,
+            'peer-alias': ws.alias || clientId
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} auto-joined "${targetRoomName}"`);
         }
