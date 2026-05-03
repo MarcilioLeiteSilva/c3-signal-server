@@ -113,8 +113,17 @@ wss.on('connection', (ws, req) => {
     // Send welcome IMMEDIATELY
     const welcomeMsg = JSON.stringify({
       message: 'welcome',
-      myid: clientId,
-      sigservinfo: SERVER_INFO
+      clientid: clientId,
+      protocolrev: SERVER_INFO.protocolrev,
+      version: SERVER_INFO.version,
+      name: SERVER_INFO.name,
+      operator: SERVER_INFO.operator,
+      motd: SERVER_INFO.motd,
+      ice_servers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
+        { urls: "stun:stun2.l.google.com:19302" }
+      ]
     });
     
     ws.send(welcomeMsg, (err) => {
@@ -142,13 +151,11 @@ wss.on('connection', (ws, req) => {
     // --- PING ---
     if (type === 'ping') {
       ws.lastPing = Date.now();
-      send(ws, { message: 'pong', serverTime: Date.now() });
-
-    // --- LOGIN ---
+      send(ws, { message: 'pong', 'server-time': Date.now() });
     } else if (type === 'login') {
       ws.alias = msg.alias || ('Player_' + clientId.substr(0, 4));
       ws.isLoggedIn = true;
-      send(ws, { message: 'login-ok', myalias: ws.alias });
+      send(ws, { message: 'login-ok', alias: ws.alias });
       console.log(`[Signal] ${clientId} logged in as "${ws.alias}"`);
 
     // --- JOIN ROOM ---
@@ -171,11 +178,7 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
-            id: clientId,
-            peeralias: ws.alias || clientId,
-            room: room,
-            instance: instance,
-            game: game
+            peeralias: ws.alias || clientId
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} joined room "${room}"`);
         }
@@ -189,19 +192,18 @@ wss.on('connection', (ws, req) => {
       const peersList = [];
       for (const [pid, pws] of roomObj.peers) {
         if (pid !== clientId) {
-          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid });
+          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid, 'peer-id': pid, 'peer-alias': pws.alias || pid });
         }
       }
 
       send(ws, {
         message: 'join-ok',
-        isHost,
-        hostId: hostPeer.clientId,
-        hostAlias: hostPeer.alias,
-        peers: peersList,
-        game,
-        gameInstance: instance,
-        room
+        host: isHost,
+        hostid: hostPeer.clientId,
+        hostalias: hostPeer.alias,
+        game: game,
+        instance: instance,
+        room: room
       });
 
       console.log(`[Signal] ${ws.alias} joined room "${game}/${instance}/${room}" (host: ${isHost})`);
@@ -239,11 +241,7 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
-            id: clientId, // Compatibility alias
-            peeralias: ws.alias || clientId,
-            room: targetRoomName,
-            instance: instance,
-            game: game
+            peeralias: ws.alias || clientId
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} auto-joined "${targetRoomName}"`);
         }
@@ -257,18 +255,17 @@ wss.on('connection', (ws, req) => {
       const peersList = [];
       for (const [pid, pws] of targetRoom.peers) {
         if (pid !== clientId) {
-          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid });
+          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid, 'peer-id': pid, 'peer-alias': pws.alias || pid });
         }
       }
 
       send(ws, {
         message: 'join-ok',
-        isHost,
-        hostId: hostPeer.clientId,
-        hostAlias: hostPeer.alias,
-        peers: peersList,
-        game,
-        gameInstance: instance,
+        host: isHost,
+        hostid: hostPeer.clientId,
+        hostalias: hostPeer.alias,
+        game: game,
+        instance: instance,
         room: targetRoomName
       });
 
@@ -281,52 +278,51 @@ wss.on('connection', (ws, req) => {
 
     // --- ICE CANDIDATE relay ---
     } else if (type === 'icecandidate') {
-      const targetId = msg.toclientid || msg.to;
+      const targetId = msg.toclientid || msg.to || msg['to-id'];
       const target = findPeerById(targetId);
       console.log(`[Signal] ICE Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'icecandidate',
-          fromclientid: clientId,
-          from: clientId, // Compatibility alias
+          from: clientId,
           icecandidate: msg.icecandidate
         });
       }
 
     // --- OFFER relay ---
     } else if (type === 'offer') {
-      const targetId = msg.toclientid || msg.to;
+      const targetId = msg.toclientid || msg.to || msg['to-id'];
       const target = findPeerById(targetId);
       console.log(`[Signal] OFFER Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'offer',
-          fromclientid: clientId,
-          from: clientId, // Compatibility alias
+          from: clientId,
           offer: msg.offer
         });
       }
 
     // --- ANSWER relay ---
     } else if (type === 'answer') {
-      const targetId = msg.toclientid || msg.to;
+      const targetId = msg.toclientid || msg.to || msg['to-id'];
       const target = findPeerById(targetId);
       console.log(`[Signal] ANSWER Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'answer',
-          fromclientid: clientId,
-          from: clientId, // Compatibility alias
+          from: clientId,
           answer: msg.answer
         });
       }
 
     // --- CONFIRM PEER ---
     } else if (type === 'confirm-peer') {
-      const target = findPeerById(msg.peerid);
+      const targetId = msg.id;
+      const target = findPeerById(targetId);
       if (target) {
         send(target, { message: 'peer-confirmed', peerid: clientId });
       }
+
 
     // --- LIST GAME INSTANCES ---
     } else if (type === 'list-game-instances') {
