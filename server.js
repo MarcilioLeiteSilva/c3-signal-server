@@ -7,7 +7,7 @@
 const http = require('http');
 const WebSocket = require('ws');
 
-const PORT = 80; // Hardcoded to bypass misconfigured environment variables
+const PORT = Number(process.env.PORT) || 3000;
 const HOST = '0.0.0.0';
 
 const SERVER_INFO = {
@@ -77,15 +77,9 @@ process.on('unhandledRejection', (reason, promise) => {
 
 // --- HTTP SERVER FOR HEALTH CHECK & PROXIES ---
 const server = http.createServer((req, res) => {
-  console.log(`[Signal] HTTP Request: ${req.method} ${req.url} [Host: ${req.headers.host}]`);
-  
-  if (req.url.startsWith('/health')) {
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.end('OK');
-    return;
-  }
-  res.writeHead(404);
-  res.end('Not Found');
+  console.log(`[Signal] incoming request: ${req.method} ${req.url}`);
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('OK - Signal Server is running');
 });
 
 const wss = new WebSocket.Server({ 
