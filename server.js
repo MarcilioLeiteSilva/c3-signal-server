@@ -78,10 +78,10 @@ console.log(`[Signal] Server initialization started on port ${PORT}...`);
 const wss = new WebSocket.Server({ 
   port: PORT,
   host: HOST,
-  handleProtocols: (protocols) => {
+  /* handleProtocols: (protocols) => {
     console.log(`[Signal] Protocol handshake: ${JSON.stringify(protocols)}`);
-    return 'c2multiplayer'; // Force return for C3
-  }
+    return 'c2multiplayer';
+  } */
 });
 
 wss.on('listening', () => {
