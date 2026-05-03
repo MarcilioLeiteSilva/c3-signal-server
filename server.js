@@ -176,11 +176,19 @@ wss.on('connection', (ws, req) => {
       ws.instance = instance;
       ws.room = room;
 
+      const peersList = [];
+      for (const [pid, pws] of roomObj.peers) {
+        if (pid !== clientId) {
+          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid });
+        }
+      }
+
       send(ws, {
         message: 'join-ok',
         isHost,
         hostId: hostPeer.clientId,
         hostAlias: hostPeer.alias,
+        peers: peersList,
         game,
         gameInstance: instance,
         room
@@ -233,11 +241,19 @@ wss.on('connection', (ws, req) => {
       ws.instance = instance;
       ws.room = targetRoomName;
 
+      const peersList = [];
+      for (const [pid, pws] of targetRoom.peers) {
+        if (pid !== clientId) {
+          peersList.push({ id: pid, peerid: pid, alias: pws.alias || pid });
+        }
+      }
+
       send(ws, {
         message: 'join-ok',
         isHost,
         hostId: hostPeer.clientId,
         hostAlias: hostPeer.alias,
+        peers: peersList,
         game,
         gameInstance: instance,
         room: targetRoomName
