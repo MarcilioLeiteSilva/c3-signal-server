@@ -64,41 +64,58 @@ function send(ws, obj) {
   }
 }
 
+process.on('uncaughtException', (err) => {
+  console.error('[Signal] Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[Signal] Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const wss = new WebSocket.Server({ 
   port: PORT,
   handleProtocols: (protocols, request) => {
-    // Always accept - return first protocol if provided, or 'c2multiplayer' as default
-    let protoList = [];
-    if (protocols instanceof Set) protoList = [...protocols];
-    else if (Array.isArray(protocols)) protoList = protocols;
-    else if (protocols) protoList = [String(protocols)];
+    try {
+      let protoList = [];
+      if (protocols instanceof Set) protoList = [...protocols];
+      else if (Array.isArray(protocols)) protoList = protocols;
+      else if (protocols) protoList = [String(protocols)];
 
-    const chosen = protoList.length > 0 ? protoList[0] : '';
-    console.log(`[Signal] Handshake protocols: [${protoList.join(', ')}] -> accepting: "${chosen}"`);
-    return chosen; // empty string = accept without subprotocol (still valid)
+      const chosen = protoList.length > 0 ? protoList[0] : '';
+      console.log(`[Signal] Handshake protocols: [${protoList.join(', ')}] -> accepting: "${chosen}"`);
+      return chosen;
+    } catch (e) {
+      console.error('[Signal] Error in handleProtocols:', e);
+      return '';
+    }
   }
 });
 
 console.log(`[Signal] Server running on port ${PORT}`);
 
 wss.on('connection', (ws, req) => {
-  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-  const clientId = generateId();
-  ws.clientId = clientId;
-  ws.alias = null;
-  ws.game = null;
-  ws.instance = null;
-  ws.room = null;
-  ws.isLoggedIn = false;
+  try {
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const clientId = generateId();
+    ws.clientId = clientId;
+    ws.alias = null;
+    ws.game = null;
+    ws.instance = null;
+    ws.room = null;
+    ws.isLoggedIn = false;
 
-  console.log(`[Signal] Client connected: ${clientId} from IP: ${ip}`);
+    console.log(`[Signal] Client connected: ${clientId} from IP: ${ip}`);
 
-  // Send welcome
-  send(ws, {
-    message: 'welcome',
-    myid: clientId,
-    sigservinfo: SERVER_INFO
-  });
+    // Send welcome
+    send(ws, {
+      message: 'welcome',
+      myid: clientId,
+      sigservinfo: SERVER_INFO
+    });
+  } catch (err) {
+    console.error(`[Signal] Connection error:`, err);
+    ws.close(1011, 'Internal server error');
+  }
 
   ws.on('message', (data) => {
     let msg;
