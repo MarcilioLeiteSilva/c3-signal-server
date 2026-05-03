@@ -123,7 +123,11 @@ wss.on('connection', (ws, req) => {
         { urls: "stun:stun.l.google.com:19302" },
         { urls: "stun:stun1.l.google.com:19302" },
         { urls: "stun:stun2.l.google.com:19302" },
-        { urls: "turn:gamesmultiplayer-coturn.gtalg3.easypanel.host:3478" }
+        { 
+          urls: "turn:gamesmultiplayer-coturn.gtalg3.easypanel.host:3478",
+          username: "user",
+          credential: "password"
+        }
       ]
     });
     
