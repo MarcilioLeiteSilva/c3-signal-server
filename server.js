@@ -5,7 +5,8 @@
  */
 
 const WebSocket = require('ws');
-const PORT = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const HOST = '0.0.0.0'; // Essential for Docker/EasyPanel
 
 const SERVER_INFO = {
   protocolrev: 1,
@@ -76,6 +77,7 @@ console.log(`[Signal] Server initialization started on port ${PORT}...`);
 
 const wss = new WebSocket.Server({ 
   port: PORT,
+  host: HOST,
   handleProtocols: (protocols) => {
     console.log(`[Signal] Protocol handshake: ${JSON.stringify(protocols)}`);
     return 'c2multiplayer'; // Force return for C3
