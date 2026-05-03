@@ -67,8 +67,15 @@ function send(ws, obj) {
 const wss = new WebSocket.Server({ 
   port: PORT,
   handleProtocols: (protocols, request) => {
-    // Construct 3 sometimes sends specific protocols, we must return one to accept
-    return protocols.size > 0 ? [...protocols][0] : false;
+    // Always accept - return first protocol if provided, or 'c2multiplayer' as default
+    let protoList = [];
+    if (protocols instanceof Set) protoList = [...protocols];
+    else if (Array.isArray(protocols)) protoList = protocols;
+    else if (protocols) protoList = [String(protocols)];
+
+    const chosen = protoList.length > 0 ? protoList[0] : '';
+    console.log(`[Signal] Handshake protocols: [${protoList.join(', ')}] -> accepting: "${chosen}"`);
+    return chosen; // empty string = accept without subprotocol (still valid)
   }
 });
 
