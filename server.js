@@ -4,9 +4,11 @@
  * Supports: multiple games, multiple instances, multiple rooms
  */
 
+const http = require('http');
 const WebSocket = require('ws');
+
 const PORT = Number(process.env.PORT) || 3000;
-const HOST = '0.0.0.0'; // Essential for Docker/EasyPanel
+const HOST = '0.0.0.0';
 
 const SERVER_INFO = {
   protocolrev: 1,
@@ -73,23 +75,29 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[Signal] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-console.log(`[Signal] Server initialization started on port ${PORT}...`);
+// --- HTTP SERVER FOR HEALTH CHECK & PROXIES ---
+const server = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('OK');
+    return;
+  }
+  res.writeHead(404);
+  res.end();
+});
 
 const wss = new WebSocket.Server({ 
-  port: PORT,
-  host: HOST,
-  /* handleProtocols: (protocols) => {
-    console.log(`[Signal] Protocol handshake: ${JSON.stringify(protocols)}`);
-    return 'c2multiplayer';
-  } */
+  server,
+  handleProtocols: (protocols) => {
+    const list = Array.isArray(protocols) ? protocols : Array.from(protocols || []);
+    if (list.includes('c2multiplayer')) return 'c2multiplayer';
+    if (list.includes('c3multiplayer')) return 'c3multiplayer';
+    return list[0] || '';
+  }
 });
 
-wss.on('listening', () => {
-  console.log(`[Signal] SERVER IS LISTENING ON PORT ${PORT}`);
-});
-
-wss.on('error', (err) => {
-  console.error('[Signal] SERVER ERROR:', err);
+server.listen(PORT, HOST, () => {
+  console.log(`[Signal] HTTP/WS Server listening on ${HOST}:${PORT}`);
 });
 
 wss.on('connection', (ws, req) => {
