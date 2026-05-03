@@ -120,9 +120,10 @@ wss.on('connection', (ws, req) => {
       operator: SERVER_INFO.operator,
       motd: SERVER_INFO.motd,
       ice_servers: [
-        { urls: "stun:stun.l.google.com:19302" },
-        { urls: "stun:stun1.l.google.com:19302" },
-        { urls: "stun:stun2.l.google.com:19302" }
+        "stun:stun.l.google.com:19302",
+        "stun:stun1.l.google.com:19302",
+        "stun:stun2.l.google.com:19302",
+        "turn:gamesmultiplayer-coturn.gtalg3.easypanel.host:3478"
       ]
     });
     
