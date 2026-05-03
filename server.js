@@ -221,6 +221,7 @@ wss.on('connection', (ws, req) => {
           send(peer, {
             message: 'peer-joined',
             peerid: clientId,
+            id: clientId, // Compatibility alias
             peeralias: ws.alias || clientId
           });
           console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} auto-joined "${targetRoomName}"`);
@@ -251,33 +252,42 @@ wss.on('connection', (ws, req) => {
 
     // --- ICE CANDIDATE relay ---
     } else if (type === 'icecandidate') {
-      const target = findPeerById(msg.toclientid);
+      const targetId = msg.toclientid || msg.to;
+      const target = findPeerById(targetId);
+      console.log(`[Signal] ICE Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'icecandidate',
           fromclientid: clientId,
+          from: clientId, // Compatibility alias
           icecandidate: msg.icecandidate
         });
       }
 
     // --- OFFER relay ---
     } else if (type === 'offer') {
-      const target = findPeerById(msg.toclientid);
+      const targetId = msg.toclientid || msg.to;
+      const target = findPeerById(targetId);
+      console.log(`[Signal] OFFER Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'offer',
           fromclientid: clientId,
+          from: clientId, // Compatibility alias
           offer: msg.offer
         });
       }
 
     // --- ANSWER relay ---
     } else if (type === 'answer') {
-      const target = findPeerById(msg.toclientid);
+      const targetId = msg.toclientid || msg.to;
+      const target = findPeerById(targetId);
+      console.log(`[Signal] ANSWER Relay: ${clientId} -> ${targetId} (${target ? 'FOUND' : 'NOT FOUND'})`);
       if (target) {
         send(target, {
           message: 'answer',
           fromclientid: clientId,
+          from: clientId, // Compatibility alias
           answer: msg.answer
         });
       }
