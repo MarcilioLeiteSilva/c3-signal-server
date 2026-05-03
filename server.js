@@ -201,6 +201,7 @@ wss.on('connection', (ws, req) => {
         host: isHost,
         hostid: hostPeer.clientId,
         hostalias: hostPeer.alias,
+        peers: peersList,
         game: game,
         instance: instance,
         room: room
@@ -264,6 +265,7 @@ wss.on('connection', (ws, req) => {
         host: isHost,
         hostid: hostPeer.clientId,
         hostalias: hostPeer.alias,
+        peers: peersList,
         game: game,
         instance: instance,
         room: targetRoomName
