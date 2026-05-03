@@ -72,30 +72,27 @@ process.on('unhandledRejection', (reason, promise) => {
   console.error('[Signal] Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
+console.log(`[Signal] Server initialization started on port ${PORT}...`);
+
 const wss = new WebSocket.Server({ 
   port: PORT,
-  handleProtocols: (protocols, request) => {
-    try {
-      let protoList = [];
-      if (protocols instanceof Set) protoList = [...protocols];
-      else if (Array.isArray(protocols)) protoList = protocols;
-      else if (protocols) protoList = [String(protocols)];
-
-      const chosen = protoList.length > 0 ? protoList[0] : '';
-      console.log(`[Signal] Handshake protocols: [${protoList.join(', ')}] -> accepting: "${chosen}"`);
-      return chosen;
-    } catch (e) {
-      console.error('[Signal] Error in handleProtocols:', e);
-      return '';
-    }
+  handleProtocols: (protocols) => {
+    console.log(`[Signal] Protocol handshake: ${JSON.stringify(protocols)}`);
+    return 'c2multiplayer'; // Force return for C3
   }
 });
 
-console.log(`[Signal] Server running on port ${PORT}`);
+wss.on('listening', () => {
+  console.log(`[Signal] SERVER IS LISTENING ON PORT ${PORT}`);
+});
+
+wss.on('error', (err) => {
+  console.error('[Signal] SERVER ERROR:', err);
+});
 
 wss.on('connection', (ws, req) => {
   try {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || 'unknown';
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0';
     const clientId = generateId();
     ws.clientId = clientId;
     ws.alias = null;
@@ -104,17 +101,23 @@ wss.on('connection', (ws, req) => {
     ws.room = null;
     ws.isLoggedIn = false;
 
-    console.log(`[Signal] Client connected: ${clientId} from IP: ${ip}`);
+    console.log(`[Signal] NEW CONNECTION: ${clientId} from ${ip}`);
 
-    // Send welcome
-    send(ws, {
+    // Send welcome IMMEDIATELY
+    const welcomeMsg = JSON.stringify({
       message: 'welcome',
       myid: clientId,
       sigservinfo: SERVER_INFO
     });
+    
+    ws.send(welcomeMsg, (err) => {
+      if (err) console.error(`[Signal] Error sending welcome to ${clientId}:`, err);
+      else console.log(`[Signal] Welcome sent to ${clientId}`);
+    });
+
   } catch (err) {
-    console.error(`[Signal] Connection error:`, err);
-    ws.close(1011, 'Internal server error');
+    console.error(`[Signal] Connection crash:`, err);
+    try { ws.terminate(); } catch(e) {}
   }
 
   ws.on('message', (data) => {
