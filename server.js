@@ -64,11 +64,18 @@ function send(ws, obj) {
   }
 }
 
-const wss = new WebSocket.Server({ port: PORT });
+const wss = new WebSocket.Server({ 
+  port: PORT,
+  handleProtocols: (protocols, request) => {
+    // Construct 3 sometimes sends specific protocols, we must return one to accept
+    return protocols.size > 0 ? [...protocols][0] : false;
+  }
+});
 
 console.log(`[Signal] Server running on port ${PORT}`);
 
-wss.on('connection', (ws) => {
+wss.on('connection', (ws, req) => {
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const clientId = generateId();
   ws.clientId = clientId;
   ws.alias = null;
@@ -77,7 +84,7 @@ wss.on('connection', (ws) => {
   ws.room = null;
   ws.isLoggedIn = false;
 
-  console.log(`[Signal] Client connected: ${clientId}`);
+  console.log(`[Signal] Client connected: ${clientId} from IP: ${ip}`);
 
   // Send welcome
   send(ws, {
