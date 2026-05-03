@@ -145,7 +145,7 @@ wss.on('connection', (ws, req) => {
       console.log(`[Signal] ${clientId} logged in as "${ws.alias}"`);
 
     // --- JOIN ROOM ---
-    } else if (type === 'join-room') {
+    } else if (type === 'join-room' || type === 'join') {
       const { game, instance, room, maxClients } = msg;
       const roomObj = getOrCreateRoom(game, instance, room, maxClients);
 
@@ -188,7 +188,7 @@ wss.on('connection', (ws, req) => {
       console.log(`[Signal] ${ws.alias} joined room "${game}/${instance}/${room}" (host: ${isHost})`);
 
     // --- AUTO JOIN ROOM ---
-    } else if (type === 'auto-join-room') {
+    } else if (type === 'auto-join-room' || type === 'auto-join') {
       const { game, instance, room: preferredRoom, maxClients, lock } = msg;
       const gi = games.get(game);
       let targetRoom = null;
