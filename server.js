@@ -97,16 +97,16 @@ server.listen(PORT, HOST, () => {
 });
 
 wss.on('connection', (ws, req) => {
-  try {
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0';
-    const clientId = generateId();
-    ws.clientId = clientId;
-    ws.alias = null;
-    ws.game = null;
-    ws.instance = null;
-    ws.room = null;
-    ws.isLoggedIn = false;
+  const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress || '0.0.0.0';
+  const clientId = generateId();
+  ws.clientId = clientId;
+  ws.alias = null;
+  ws.game = null;
+  ws.instance = null;
+  ws.room = null;
+  ws.isLoggedIn = false;
 
+  try {
     console.log(`[Signal] NEW CONNECTION: ${clientId} from ${ip}`);
 
     // Send welcome IMMEDIATELY
@@ -122,8 +122,9 @@ wss.on('connection', (ws, req) => {
     });
 
   } catch (err) {
-    console.error(`[Signal] Connection crash:`, err);
+    console.error(`[Signal] Connection initialization crash:`, err);
     try { ws.terminate(); } catch(e) {}
+    return;
   }
 
   ws.on('message', (data) => {
