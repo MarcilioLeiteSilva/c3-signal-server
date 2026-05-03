@@ -114,6 +114,7 @@ wss.on('connection', (ws, req) => {
     const welcomeMsg = JSON.stringify({
       message: 'welcome',
       clientid: clientId,
+      'client-id': clientId,
       protocolrev: SERVER_INFO.protocolrev,
       version: SERVER_INFO.version,
       name: SERVER_INFO.name,
@@ -151,7 +152,11 @@ wss.on('connection', (ws, req) => {
     // --- PING ---
     if (type === 'ping') {
       ws.lastPing = Date.now();
-      send(ws, { message: 'pong', 'server-time': Date.now() });
+      send(ws, { 
+        message: 'pong', 
+        'server-time': Date.now(),
+        'servertime': Date.now()
+      });
     } else if (type === 'login') {
       ws.alias = msg.alias || ('Player_' + clientId.substr(0, 4));
       ws.isLoggedIn = true;
@@ -201,8 +206,11 @@ wss.on('connection', (ws, req) => {
       send(ws, {
         message: 'join-ok',
         host: isHost,
+        ishost: isHost,
         hostid: hostPeer.clientId,
         hostalias: hostPeer.alias,
+        'host-id': hostPeer.clientId,
+        'host-alias': hostPeer.alias,
         peers: peersList,
         game: game,
         instance: instance,
@@ -267,8 +275,11 @@ wss.on('connection', (ws, req) => {
       send(ws, {
         message: 'join-ok',
         host: isHost,
+        ishost: isHost,
         hostid: hostPeer.clientId,
         hostalias: hostPeer.alias,
+        'host-id': hostPeer.clientId,
+        'host-alias': hostPeer.alias,
         peers: peersList,
         game: game,
         instance: instance,
@@ -323,10 +334,14 @@ wss.on('connection', (ws, req) => {
 
     // --- CONFIRM PEER ---
     } else if (type === 'confirm-peer') {
-      const targetId = msg.id;
+      const targetId = msg.id || msg.peerid || msg['peer-id'];
       const target = findPeerById(targetId);
       if (target) {
-        send(target, { message: 'peer-confirmed', peerid: clientId });
+        send(target, { 
+          message: 'peer-confirmed', 
+          peerid: clientId,
+          'peer-id': clientId 
+        });
       }
 
 
