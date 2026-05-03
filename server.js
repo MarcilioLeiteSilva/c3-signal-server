@@ -125,6 +125,18 @@ wss.on('connection', (ws, req) => {
       const isHost = roomObj.peers.size === 0;
       const hostPeer = isHost ? ws : [...roomObj.peers.values()][0];
 
+      // Notify existing peers that a new peer joined
+      if (!isHost) {
+        for (const [pid, peer] of roomObj.peers) {
+          send(peer, {
+            message: 'peer-joined',
+            peerid: clientId,
+            peeralias: ws.alias || clientId
+          });
+          console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} joined room "${room}"`);
+        }
+      }
+
       roomObj.peers.set(clientId, ws);
       ws.game = game;
       ws.instance = instance;
@@ -168,6 +180,18 @@ wss.on('connection', (ws, req) => {
 
       const isHost = targetRoom.peers.size === 0;
       const hostPeer = isHost ? ws : [...targetRoom.peers.values()][0];
+
+      // Notify existing peers that a new peer joined
+      if (!isHost) {
+        for (const [pid, peer] of targetRoom.peers) {
+          send(peer, {
+            message: 'peer-joined',
+            peerid: clientId,
+            peeralias: ws.alias || clientId
+          });
+          console.log(`[Signal] Notified ${peer.alias} that ${ws.alias} auto-joined "${targetRoomName}"`);
+        }
+      }
 
       targetRoom.peers.set(clientId, ws);
       ws.game = game;
