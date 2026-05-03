@@ -7,7 +7,7 @@
 const http = require('http');
 const WebSocket = require('ws');
 
-const PORT = Number(process.env.PORT) || 80;
+const PORT = 80; // Hardcoded to bypass misconfigured environment variables
 const HOST = '0.0.0.0';
 
 const SERVER_INFO = {
