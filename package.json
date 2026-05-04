@@ -1,13 +1,13 @@
 {
-  "name": "c3-signal-server",
-  "version": "1.0.0",
-  "description": "Construct 3 compatible multiplayer signaling server",
+  "name": "soccercup2026-signal-server",
+  "version": "3.0.0",
+  "description": "Soccer Cup 2026 — Construct 3 compatible multiplayer signaling server",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "ws": "^8.16.0"
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=18"
