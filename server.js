@@ -146,7 +146,10 @@ wss.on('connection', (ws, req) => {
   ws.instance    = null;
   ws.room        = null;
   ws.isLoggedIn  = false;
-  ws.lastPing    = Date.now();
+  ws.isAlive     = true;  // Para o keepalive via ping/pong do protocolo WebSocket
+
+  // Responde ao pong do browser (automático — sem JS no cliente)
+  ws.on('pong', () => { ws.isAlive = true; });
 
   console.log(`[Signal] CONNECT: ${ws.clientId} from ${ip}`);
 
@@ -174,7 +177,7 @@ wss.on('connection', (ws, req) => {
 
       // ── PING ──────────────────────────────────────────────────────────────
       case 'ping': {
-        ws.lastPing = Date.now();
+        ws.isAlive = true; // Também aceita ping da aplicação
         send(ws, { message: 'pong', 'server-time': Date.now() });
         break;
       }
@@ -391,15 +394,21 @@ wss.on('connection', (ws, req) => {
   });
 });
 
-// ── Keepalive ─────────────────────────────────────────────────────────────────
-// Detecta conexões zumbis e as remove após 60s sem ping
+// ── Keepalive via WebSocket protocol ping/pong ────────────────────────────────
+// O browser responde AUTOMATICAMENTE ao ws.ping() sem nenhum JS no cliente.
+// Isso mantém a conexão viva durante o jogo (quando o C3 usa só DataChannels
+// e para de enviar pings da aplicação pelo WebSocket).
 setInterval(() => {
-  const now = Date.now();
   for (const ws of wss.clients) {
-    if (now - ws.lastPing > 60000) {
-      console.warn(`[Signal] ZOMBIE: ${ws.alias || ws.clientId} — terminando.`);
+    if (!ws.isAlive) {
+      // Não respondeu ao ping anterior — conexão morta
+      console.warn(`[Signal] DEAD: ${ws.alias || ws.clientId} — terminando.`);
       leaveRoom(ws, 'timeout');
       ws.terminate();
+    } else {
+      // Marca como "pendente" e envia ping de protocolo WebSocket
+      ws.isAlive = false;
+      try { ws.ping(); } catch (_) {}
     }
   }
-}, 30000);
+}, 30000); // Verifica a cada 30s (timeout efetivo: 60s)
